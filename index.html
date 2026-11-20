@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 — Страница уплыла</title>
+    <!-- Подключение Tailwind CSS для адаптивной верстки и базовых стилей -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключение шрифта Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* Базовые настройки страницы и шрифта */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(180deg, #006994 0%, #003366 55%, #001429 100%);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Контейнер для фоновых элементов (лучи света, водоросли, пузырьки) */
+        .ocean-background {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* Солнечные лучи, пробивающиеся сквозь толщу воды */
+        .light-rays {
+            position: absolute;
+            top: -20%;
+            left: -10%;
+            width: 120%;
+            height: 90%;
+            background: repeating-linear-gradient(
+                105deg,
+                rgba(255, 255, 255, 0.04) 0px,
+                rgba(255, 255, 255, 0.04) 40px,
+                transparent 40px,
+                transparent 110px
+            );
+            filter: blur(8px);
+            animation: swayRays 12s ease-in-out infinite alternate;
+            transform-origin: top center;
+        }
+
+        @keyframes swayRays {
+            0% { transform: skewX(-8deg) scaleY(1); opacity: 0.6; }
+            100% { transform: skewX(8deg) scaleY(1.08); opacity: 0.9; }
+        }
+
+        /* Водоросли на морском дне */
+        .seaweed-container {
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 180px;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            opacity: 0.65;
+        }
+
+        .seaweed {
+            width: 24px;
+            border-radius: 50% 50% 0 0;
+            background: linear-gradient(to top, #042f2e, #0d9488);
+            transform-origin: bottom center;
+            animation: swaySeaweed var(--duration, 4s) ease-in-out infinite alternate;
+        }
+
+        @keyframes swaySeaweed {
+            0% { transform: rotate(-6deg) skewX(-3deg); }
+            100% { transform: rotate(6deg) skewX(3deg); }
+        }
+
+        /* Canvas для рыбок, пузырьков и корма */
+        #oceanCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        /* Слой пользовательского интерфейса (текст 404 и кнопки) */
+        .ui-layer {
+            position: relative;
+            z-index: 10;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1.5rem;
+            pointer-events: none; /* Позволяет кликать сквозь пустые области на воду */
+        }
+
+        /* Эффект стекла для карточки с контентом */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+            pointer-events: auto; /* Возвращаем кликабельность для кнопки и карточки */
+            transition: transform 0.3s ease;
+        }
+
+        /* Плавающая анимация для цифр 404 */
+        .float-404 {
+            animation: floatText 4.5s ease-in-out infinite;
+            text-shadow: 0 10px 30px rgba(0, 210, 255, 0.35);
+        }
+
+        @keyframes floatText {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+        }
+
+        /* Кнопка возврата с градиентом и эффектом свечения */
+        .btn-swim-back {
+            background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+            box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.5);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-swim-back:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 15px 30px -5px rgba(6, 182, 212, 0.7);
+        }
+
+        .btn-swim-back:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        /* Всплывающее уведомление (вместо alert) */
+        .toast-notification {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            z-index: 30;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #e0f2fe;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .toast-notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Фоновый подводный слой: свет и водоросли -->
+    <div class="ocean-background" aria-hidden="true">
+        <div class="light-rays"></div>
+        <div class="seaweed-container" id="seaweedContainer"></div>
+    </div>
+
+    <!-- Интерактивный холст с рыбками и пузырьками -->
+    <canvas id="oceanCanvas"></canvas>
+
+    <!-- Центральный интерфейс ошибки 404 -->
+    <main class="ui-layer">
+        <div class="glass-card rounded-3xl p-8 sm:p-12 max-w-lg w-full mx-auto">
+            <!-- Крупная надпись 404 -->
+            <h1 class="float-404 text-7xl sm:text-9xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-cyan-100 to-cyan-400 select-none">
+                404
+            </h1>
+
+            <!-- Заголовок и описание -->
+            <h2 class="mt-3 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Упс! Страница уплыла
+            </h2>
+            <p class="mt-3 text-sm sm:text-base text-cyan-100/80 leading-relaxed">
+                Схоже, ця сторінка опустилася надто глибоко або її забрала течією. Поки ви тут можете погодувати рибок - просто клікніть в будь-яке місце води!
+            </p>
+
+            <!-- Кнопки навигации и взаимодействия -->
+            <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button id="goBackBtn" class="btn-swim-back w-full sm:w-auto px-7 py-3.5 rounded-2xl text-white font-semibold text-base flex items-center justify-center gap-2 cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    <span>Вернуться на берег</span>
+                </button>
+
+                <button id="feedBtn" class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-cyan-100 font-medium text-base border border-white/15 transition-all cursor-pointer flex items-center justify-center gap-2">
+                    <span>🫧 Покормити рыбок</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Всплывающее сообщение вместо стандартного alert -->
+    <div id="toast" class="toast-notification" role="status" aria-live="polite"></div>
+
+    <script>
+        /**
+         * Инициализация и логика подводного мира 404
+         * Включает:
+         * - Генерацию водорослей на фоне
+         * - Симуляцию стаи рыбок, плавающих туда-обратно с плавным разворотом
+         * - Пузырьки воздуха, поднимающиеся со дна
+         * - Интерактивный корм при клике по экрану или кнопке
+         */
+
+        // --- 1. Генерация водорослей на фоне ---
+        function createSeaweeds() {
+            const container = document.getElementById('seaweedContainer');
+            if (!container) return;
+
+            const count = Math.floor(window.innerWidth / 45);
+            container.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const weed = document.createElement('div');
+                weed.className = 'seaweed';
+                const height = 70 + Math.random() * 120;
+                const width = 14 + Math.random() * 16;
+                const duration = 3 + Math.random() * 3.5;
+                const delay = Math.random() * -5;
+
+                weed.style.height = `${height}px`;
+                weed.style.width = `${width}px`;
+                weed.style.setProperty('--duration', `${duration}s`);
+                weed.style.animationDelay = `${delay}s`;
+                container.appendChild(weed);
+            }
+        }
+
+        // --- 2. Всплывающие уведомления ---
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            toast.textContent = message;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- 3. Настройка Canvas и сущностей ---
+        const canvas = document.getElementById('oceanCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            createSeaweeds();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Цветовые палитры для рыбок
+        const FISH_PALETTES = [
+            { body: '#ff7e5f', fin: '#feb47b', stripe: '#ffffff' }, // Рыбка-клоун
+            { body: '#38bdf8', fin: '#0284c7', stripe: '#fde047' }, // Голубой хирург
+            { body: '#f43f5e', fin: '#fb7185', stripe: '#ffe4e6' }, // Коралловая рыбка
+            { body: '#facc15', fin: '#eab308', stripe: '#fef08a' }, // Желтая зебрасома
+            { body: '#a855f7', fin: '#c084fc', stripe: '#f3e8ff' }, // Неоновая тетра
+            { body: '#34d399', fin: '#059669', stripe: '#d1fae5' }  // Изумрудная рыбка
+        ];
+
+        // Класс Рыбки
+        class Fish {
+            constructor() {
+                this.reset(true);
+            }
+
+            reset(initial = false) {
+                const palette = FISH_PALETTES[Math.floor(Math.random() * FISH_PALETTES.length)];
+                this.bodyColor = palette.body;
+                this.finColor = palette.fin;
+                this.stripeColor = palette.stripe;
+
+                this.size = 16 + Math.random() * 20; // Размер рыбки
+                this.y = 60 + Math.random() * (height - 140);
+                this.baseY = this.y;
+
+                // Направление: 1 (вправо) или -1 (влево)
+                this.direction = Math.random() < 0.5 ? 1 : -1;
+                // Текущий масштаб по X для плавного горизонтального разворота
+                this.flipScale = this.direction;
+
+                if (initial) {
+                    this.x = Math.random() * width;
+                } else {
+                    this.x = this.direction === 1 ? -50 : width + 50;
+                }
+
+                this.speed = (0.8 + Math.random() * 1.4) * (24 / this.size);
+                this.waveOffset = Math.random() * Math.PI * 2;
+                this.waveSpeed = 0.03 + Math.random() * 0.03;
+                this.waveAmp = 8 + Math.random() * 14;
+                this.tailPhase = Math.random() * Math.PI * 2;
+                this.turnMargin = 60 + Math.random() * 80;
+            }
+
+            update(foods) {
+                this.tailPhase += 0.18 + this.speed * 0.05;
+                this.waveOffset += this.waveSpeed;
+
+                // Проверяем, есть ли рядом корм
+                let targetFood = null;
+                let minDist = 280; // Радиус реакции на корм
+
+                for (let i = 0; i < foods.length; i++) {
+                    const f = foods[i];
+                    const dx = f.x - this.x;
+                    const dy = f.y - this.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        targetFood = f;
+                    }
+                }
+
+                if (targetFood) {
+                    // Плывем к корму
+                    const dx = targetFood.x - this.x;
+                    const dy = targetFood.y - this.y;
+                    const angle = Math.atan2(dy, dx);
+
+                    this.direction = dx >= 0 ? 1 : -1;
+                    const chaseSpeed = this.speed * 2.1;
+                    this.x += Math.cos(angle) * chaseSpeed;
+                    this.y += Math.sin(angle) * chaseSpeed;
+                    this.baseY = this.y;
+
+                    // Если рыбка съела корм
+                    if (minDist < this.size * 0.8) {
+                        targetFood.eaten = true;
+                        // Выпускаем радостный пузырек
+                        bubbles.push(new Bubble(this.x, this.y - 10, 3));
+                    }
+                } else {
+                    // Обычное плавание туда-обратно
+                    this.x += this.direction * this.speed;
+                    this.y = this.baseY + Math.sin(this.waveOffset) * this.waveAmp;
+
+                    // Разворот у краев экрана (плавают туда и обратно)
+                    if (this.direction === 1 && this.x > width - this.turnMargin) {
+                        this.direction = -1;
+                    } else if (this.direction === -1 && this.x < this.turnMargin) {
+                        this.direction = 1;
+                    }
+                }
+
+                // Плавная интерполяция отражения по горизонтали при смене направления
+                this.flipScale += (this.direction - this.flipScale) * 0.12;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                // Отражение рыбки по горизонтали в зависимости от направления
+                ctx.scale(this.flipScale, 1);
+
+                const tailWag = Math.sin(this.tailPhase) * (this.size * 0.25);
+
+                // Хвостовой плавник
+                ctx.fillStyle = this.finColor;
+                ctx.beginPath();
+                ctx.moveTo(-this.size * 0.7, 0);
+                ctx.lineTo(-this.size * 1.35, -this.size * 0.45 + tailWag);
+                ctx.lineTo(-this.size * 1.2, tailWag * 0.5);
+                ctx.lineTo(-this.size * 1.35, this.size * 0.45 + tailWag);
+                ctx.closePath();
+                ctx.fill();
+
+                // Верхний и нижний плавники
+                ctx.beginPath();
+                ctx.moveTo(-this.size * 0.1, -this.size * 0.4);
+                ctx.quadraticCurveTo(this.size * 0.1, -this.size * 0.85, -this.size * 0.4, -this.size * 0.45);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(-this.size * 0.1, this.size * 0.4);
+                ctx.quadraticCurveTo(this.size * 0.05, this.size * 0.75, -this.size * 0.35, this.size * 0.42);
+                ctx.fill();
+
+                // Основное тело рыбки
+                ctx.fillStyle = this.bodyColor;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.size * 0.85, this.size * 0.48, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Декоративная полоска на теле
+                ctx.save();
+                ctx.clip();
+                ctx.fillStyle = this.stripeColor;
+                ctx.globalAlpha = 0.75;
+                ctx.fillRect(-this.size * 0.15, -this.size, this.size * 0.22, this.size * 2);
+                ctx.restore();
+
+                // Боковой плавник
+                ctx.fillStyle = this.finColor;
+                ctx.beginPath();
+                ctx.ellipse(
+                    this.size * 0.05,
+                    this.size * 0.12,
+                    this.size * 0.25,
+                    this.size * 0.14,
+                    Math.sin(this.tailPhase * 0.8) * 0.4 - 0.3,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+
+                // Глаз рыбки
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(this.size * 0.45, -this.size * 0.12, this.size * 0.13, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(this.size * 0.48, -this.size * 0.12, this.size * 0.065, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // Класс Пузырька воздуха
+        class Bubble {
+            constructor(x = null, y = null, radius = null) {
+                this.x = x !== null ? x : Math.random() * width;
+                this.y = y !== null ? y : height + 10 + Math.random() * 100;
+                this.radius = radius !== null ? radius : 2 + Math.random() * 5;
+                this.speed = 0.7 + Math.random() * 1.5;
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.02 + Math.random() * 0.03;
+            }
+
+            update() {
+                this.y -= this.speed;
+                this.wobble += this.wobbleSpeed;
+                this.x += Math.sin(this.wobble) * 0.6;
+
+                if (this.y < -20) {
+                    this.y = height + 20;
+                    this.x = Math.random() * width;
+                }
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+
+                // Блик на пузырьке
+                ctx.beginPath();
+                ctx.arc(this.x - this.radius * 0.3, this.y - this.radius * 0.3, this.radius * 0.28, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Класс частицы корма
+        class FoodPellet {
+            constructor(x, y) {
+                this.x = x + (Math.random() - 0.5) * 24;
+                this.y = y + (Math.random() - 0.5) * 16;
+                this.vy = 0.6 + Math.random() * 0.8;
+                this.vx = (Math.random() - 0.5) * 0.4;
+                this.radius = 3 + Math.random() * 2;
+                this.eaten = false;
+                this.color = Math.random() > 0.5 ? '#fde047' : '#fb923c';
+            }
+
+            update() {
+                this.y += this.vy;
+                this.x += this.vx + Math.sin(this.y * 0.05) * 0.2;
+                if (this.y > height - 15) {
+                    this.eaten = true;
+                }
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = 'rgba(253, 224, 71, 0.6)';
+                ctx.shadowBlur = 6;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Массивы объектов сцены
+        let fishes = [];
+        let bubbles = [];
+        let foods = [];
+
+        function initScene() {
+            resizeCanvas();
+
+            // Создаем стаю из 14 рыбок (адаптируем количество для мобильных)
+            const fishCount = width < 640 ? 9 : 15;
+            fishes = Array.from({ length: fishCount }, () => new Fish());
+
+            // Создаем 35 пузырьков
+            const bubbleCount = width < 640 ? 20 : 35;
+            bubbles = Array.from({ length: bubbleCount }, () => {
+                const b = new Bubble();
+                b.y = Math.random() * height;
+                return b;
+            });
+        }
+
+        // Функция сброса корма в указанные координаты
+        function dropFood(x, y) {
+            for (let i = 0; i < 6; i++) {
+                foods.push(new FoodPellet(x, y));
+            }
+            // Добавляем пару пузырьков от всплеска
+            for (let i = 0; i < 3; i++) {
+                bubbles.push(new Bubble(x + (Math.random() - 0.5) * 20, y, 2 + Math.random() * 3));
+            }
+        }
+
+        // Главный цикл анимации
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Обновляем и рисуем пузырьки
+            for (let i = 0; i < bubbles.length; i++) {
+                bubbles[i].update();
+                bubbles[i].draw(ctx);
+            }
+
+            // Обновляем и рисуем корм
+            foods = foods.filter(f => !f.eaten);
+            for (let i = 0; i < foods.length; i++) {
+                foods[i].update();
+                foods[i].draw(ctx);
+            }
+
+            // Обновляем и рисуем рыбок
+            for (let i = 0; i < fishes.length; i++) {
+                fishes[i].update(foods);
+                fishes[i].draw(ctx);
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // --- 4. Интерактивные события ---
+        // Клик по холсту сбрасывает корм в точку клика
+        canvas.addEventListener('pointerdown', (e) => {
+            dropFood(e.clientX, e.clientY);
+        });
+
+        // Кнопка "Покормить рыбок"
+        const feedBtn = document.getElementById('feedBtn');
+        if (feedBtn) {
+            feedBtn.addEventListener('click', () => {
+                const randomX = width * 0.2 + Math.random() * (width * 0.6);
+                const randomY = height * 0.2 + Math.random() * (height * 0.3);
+                dropFood(randomX, randomY);
+                showToast('Рыбки плывут за угощением!');
+            });
+        }
+
+        // Кнопка "Вернуться на берег"
+        const goBackBtn = document.getElementById('goBackBtn');
+        if (goBackBtn) {
+            goBackBtn.addEventListener('click', () => {
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    showToast('Вы уже на главной глубине! Попробуйте кликнуть по воде.');
+                }
+            });
+        }
+
+        // Запуск после полной загрузки окна
+        window.onload = function () {
+            initScene();
+            animate();
+        };
+    </script>
+</body>
+</html>
